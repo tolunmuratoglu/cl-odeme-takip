@@ -11,7 +11,6 @@ let appState = {
   charts: {},
   incomeRecurring: false,
   expenseRecurring: false,
-  expensePaid: true,
 };
 
 const EXPENSE_CATS_COLORS = {
@@ -589,9 +588,7 @@ function openModal(type, item=null) {
     document.getElementById('expenseDueDate').value = item?.dueDate || new Date().toISOString().slice(0,10);
     document.getElementById('expenseDesc').value = item?.description || '';
     appState.expenseRecurring = item?.recurring || false;
-    appState.expensePaid = item?.paid !== undefined ? item.paid : true;
     updateToggle('expRecurOff','expRecurOn', !appState.expenseRecurring);
-    updateToggle('expPaidOff','expPaidOn', appState.expensePaid);
     document.getElementById('expenseModal').classList.add('open');
   }
 }
@@ -607,10 +604,6 @@ function setIncomeRecur(v) {
 function setExpenseRecur(v) {
   appState.expenseRecurring = v;
   updateToggle('expRecurOff','expRecurOn', !v);
-}
-function setExpensePaid(v) {
-  appState.expensePaid = v;
-  updateToggle('expPaidOff','expPaidOn', v);
 }
 function updateToggle(offId, onId, isOff) {
   document.getElementById(offId).classList.toggle('active', isOff);
@@ -666,7 +659,10 @@ async function saveExpense() {
   const uid = window._currentUser?.uid;
   if (!uid) { showToast('Oturum bulunamadı, tekrar giriş yapın', 'error'); return; }
 
-  const data = { title, amount, category:cat, dueDate, description:desc, recurring:appState.expenseRecurring, paid:appState.expensePaid, uid, updatedAt: new Date().toISOString() };
+  // Yeni gider her zaman ödenmemiş olarak başlar; düzenleme sırasında mevcut paid durumu korunur
+  const existingItem = editId ? appState.expenses.find(e => e.id === editId) : null;
+  const paidStatus = editId ? (existingItem?.paid || false) : false;
+  const data = { title, amount, category:cat, dueDate, description:desc, recurring:appState.expenseRecurring, paid:paidStatus, uid, updatedAt: new Date().toISOString() };
 
   try {
     const db = window._db;
@@ -698,10 +694,59 @@ async function deleteItem(type, id) {
 
 async function markPaid(id) {
   try {
-    const { doc, updateDoc } = window._firebase;
-    await updateDoc(doc(window._db,'expenses',id), { paid:true, updatedAt: new Date().toISOString() });
-    showToast('Ödendi olarak işaretlendi', 'success');
-  } catch(e) { showToast('Hata: '+e.message, 'error'); }
+    const { doc, updateDoc, collection, addDoc } = window._firebase;
+    const db = window._db;
+
+    // Ödendi olarak işaretle
+    await updateDoc(doc(db,'expenses',id), { paid: true, updatedAt: new Date().toISOString() });
+
+    // Tekrarlı gider ise bir sonraki ay için otomatik kayıt oluştur
+    const item = appState.expenses.find(e => e.id === id);
+    if (item && item.recurring) {
+      const pad = n => String(n).padStart(2,'0');
+      const currentDue = item.dueDate || '';
+      const currentYear  = parseInt(currentDue.slice(0,4));
+      const currentMonth = parseInt(currentDue.slice(5,7)) - 1; // 0-indexed
+      const day          = currentDue.slice(8,10) || '01';
+
+      // Sonraki ay hesapla
+      let nextMonth = currentMonth + 1;
+      let nextYear  = currentYear;
+      if (nextMonth > 11) { nextMonth = 0; nextYear++; }
+
+      const nextDueDate = `${nextYear}-${pad(nextMonth+1)}-${day}`;
+
+      // Sonraki ayda zaten var mı kontrol et
+      const alreadyExists = appState.expenses.some(e =>
+        e.title === item.title &&
+        (e.dueDate || '').slice(0,7) === nextDueDate.slice(0,7)
+      );
+
+      if (!alreadyExists) {
+        await addDoc(collection(db,'expenses'), {
+          title:       item.title,
+          amount:      item.amount,
+          category:    item.category,
+          description: item.description || '',
+          dueDate:     nextDueDate,
+          recurring:   true,
+          paid:        false,
+          uid:         item.uid,
+          createdAt:   new Date().toISOString(),
+          updatedAt:   new Date().toISOString(),
+          generatedFromRecurring: true
+        });
+        showToast('Ödendi ✓ — ' + MONTHS_TR[nextMonth] + ' için sonraki kayıt oluşturuldu', 'success');
+      } else {
+        showToast('Ödendi olarak işaretlendi ✓', 'success');
+      }
+    } else {
+      showToast('Ödendi olarak işaretlendi ✓', 'success');
+    }
+  } catch(e) {
+    console.error('markPaid error:', e);
+    showToast('Hata: ' + e.message, 'error');
+  }
 }
 
 function editItem(type, id) {
