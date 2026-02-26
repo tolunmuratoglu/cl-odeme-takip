@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#1e3a5f"/>
+  <meta name="description" content="Finans Takip — Profesyonel Gelir ve Gider Yönetim Uygulaması"/>
+  <meta name="author" content="Finans Takip"/>
+  <meta property="og:title" content="Finans Takip"/>
+  <meta property="og:description" content="Gelir ve giderlerinizi profesyonel şekilde yönetin"/>
+  <meta property="og:type" content="website"/>
+
+  <title>Finans Takip — Profesyonel Gelir &amp; Gider Yönetimi</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json"/>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css"/>
+
+  <!-- Third-party Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- Firebase (ES Module) -->
+  <script type="module" src="js/firebase.js"></script>
+</head>
+<body>
+
+  <!-- ============================================================
+       LOGIN SCREEN
+       ============================================================ -->
+  <div id="loginScreen">
+    <div class="login-card">
+
+      <!-- Brand Header -->
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+            <polyline points="16 7 22 7 22 13"/>
+          </svg>
+        </div>
+        <div>
+          <div class="login-brand-name">Finans Takip</div>
+        </div>
+      </div>
+      <p class="login-tagline">Gelir ve giderlerinizi profesyonel şekilde yönetin</p>
+
+      <!-- Tab Switcher -->
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('login')">Giriş Yap</button>
+        <button class="tab-btn" onclick="switchTab('register')">Kayıt Ol</button>
+      </div>
+
+      <!-- Alert Area -->
+      <div class="alert" id="loginAlert"></div>
+
+      <!-- Login Form -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label class="form-label">E-posta Adresi</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="ornek@mail.com" autocomplete="email"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Şifre</label>
+          <div class="input-wrap">
+            <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" style="padding-right:40px" autocomplete="current-password"/>
+            <button class="input-toggle" onclick="togglePwd('loginPassword',this)" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <a class="forgot-link" onclick="showForgotPassword()">Şifremi Unuttum</a>
+        <button class="btn-primary" id="loginBtn" onclick="doLogin()">
+          <span id="loginBtnText">Giriş Yap</span>
+        </button>
+      </div>
+
+      <!-- Register Form -->
+      <div id="registerForm" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Ad Soyad</label>
+          <input type="text" id="regName" class="form-input" placeholder="Ad Soyad"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-posta Adresi</label>
+          <input type="email" id="regEmail" class="form-input" placeholder="ornek@mail.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Şifre</label>
+          <div class="input-wrap">
+            <input type="password" id="regPassword" class="form-input" placeholder="En az 6 karakter" style="padding-right:40px"/>
+            <button class="input-toggle" onclick="togglePwd('regPassword',this)" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn-primary" id="regBtn" onclick="doRegister()">
+          <span id="regBtnText">Hesap Oluştur</span>
+        </button>
+      </div>
+
+      <!-- Demo Account Info -->
+      <div class="demo-box">
+        🔑 <strong>Demo Hesap</strong><br/>
+        E-posta: <span class="mono">demo@finanstakip.com</span><br/>
+        Şifre: <span class="mono">123456</span>
+      </div>
+
+    </div>
+  </div><!-- /loginScreen -->
+
+
+  <!-- ============================================================
+       APP SCREEN
+       ============================================================ -->
+  <div id="appScreen" style="display:none">
+    <div class="app-layout">
+
+      <!-- Mobile Sidebar Overlay -->
+      <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+      <!-- ── Sidebar ── -->
+      <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+              <polyline points="16 7 22 7 22 13"/>
+            </svg>
+          </div>
+          <div>
+            <div class="sidebar-brand-text">Finans Takip</div>
+            <div class="sidebar-brand-sub">Pro Panel</div>
+          </div>
+        </div>
+
+        <div class="sidebar-user">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <div>
+            <div class="user-info-name" id="userName">Yükleniyor...</div>
+            <div class="user-info-email" id="userEmail">—</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Genel</div>
+          <div class="nav-item active" onclick="navigateTo('dashboard')">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+          </div>
+          <div class="nav-item" onclick="navigateTo('analysis')">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Akıllı Analiz
+          </div>
+
+          <div class="nav-section-label">İşlemler</div>
+          <div class="nav-item" onclick="navigateTo('income')">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+            Gelir Yönetimi
+          </div>
+          <div class="nav-item" onclick="navigateTo('expenses')">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
+              <polyline points="17 18 23 18 23 12"/>
+            </svg>
+            Gider Yönetimi
+          </div>
+
+          <div class="nav-section-label">Araçlar</div>
+          <div class="nav-item" onclick="navigateTo('reports')">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Raporlar
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button class="btn-logout" onclick="doLogout()">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Çıkış Yap
+          </button>
+        </div>
+
+      </aside><!-- /sidebar -->
+
+
+      <!-- ── Main Content ── -->
+      <main class="main-content">
+
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="hamburger btn-icon" onclick="toggleSidebar()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+            <div>
+              <div class="topbar-title" id="pageTitle">Dashboard</div>
+              <div class="topbar-subtitle" id="pageSubtitle">Finansal Özet</div>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <!-- Month Navigator -->
+            <div style="display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;background:var(--bg-input);">
+              <button class="btn-icon" style="border:none;background:none;" onclick="prevMonth()" title="Önceki Ay">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+              <span style="font-size:12px;font-weight:600;color:var(--text-primary);min-width:90px;text-align:center" id="currentMonthLabel">—</span>
+              <button class="btn-icon" style="border:none;background:none;" onclick="nextMonth()" title="Sonraki Ay">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </div>
+            <!-- Notifications -->
+            <div class="btn-icon notif-badge" id="notifToggle" onclick="toggleNotifPanel()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span class="notif-dot" id="notifDot" style="display:none"></span>
+            </div>
+            <!-- Dark Mode -->
+            <button class="btn-icon" onclick="toggleDark()" title="Dark / Light Mode">
+              <svg id="darkIcon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Notification Panel -->
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-header">🔔 Bildirimler</div>
+          <div id="notifList">
+            <div class="empty-state" style="padding:20px">
+              <p style="color:var(--text-muted);font-size:13px">Bildirim yok</p>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ── PAGE: Dashboard ── -->
+        <div class="page active" id="dashboardPage">
+          <div class="stats-grid" id="statsGrid"></div>
+          <div class="charts-grid" id="chartsGrid">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Gelir &amp; Gider Karşılaştırma</div>
+                  <div class="chart-subtitle">Bu ay</div>
+                </div>
+              </div>
+              <div class="chart-container"><canvas id="incomeExpenseChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Gider Kategorileri</div>
+                  <div class="chart-subtitle">Dağılım</div>
+                </div>
+              </div>
+              <div class="chart-container"><canvas id="categoryPieChart"></canvas></div>
+            </div>
+            <div class="chart-card chart-card-full">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Son 6 Ay Trendi</div>
+                  <div class="chart-subtitle">Gelir — Gider — Net</div>
+                </div>
+              </div>
+              <div class="chart-container" style="height:250px"><canvas id="trendChart"></canvas></div>
+            </div>
+          </div>
+          <!-- Recent Transactions -->
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Son İşlemler</div>
+              <div class="section-actions">
+                <button class="btn-outline" onclick="navigateTo('expenses')">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2"/>
+                  </svg>
+                  Tümünü Gör
+                </button>
+              </div>
+            </div>
+            <div class="transaction-list" id="recentTransactions"></div>
+          </div>
+        </div><!-- /dashboardPage -->
+
+
+        <!-- ── PAGE: Income ── -->
+        <div class="page" id="incomePage">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Gelir Yönetimi</div>
+              <div class="section-actions">
+                <button class="btn-outline" onclick="exportExcel('income')">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Excel
+                </button>
+                <button class="btn-add" onclick="openModal('income')">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Gelir Ekle
+                </button>
+              </div>
+            </div>
+            <div class="search-bar">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex-shrink:0">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" class="search-input" placeholder="Gelir ara..." id="incomeSearchInput" oninput="filterTransactions('income')"/>
+            </div>
+            <div class="filter-row">
+              <button class="filter-pill active" data-filter="all"       onclick="setFilter(this,'income')">Tümü</button>
+              <button class="filter-pill"        data-filter="one-time"  onclick="setFilter(this,'income')">Tek Seferlik</button>
+              <button class="filter-pill"        data-filter="recurring" onclick="setFilter(this,'income')">Tekrarlı</button>
+            </div>
+            <div class="transaction-list" id="incomeList"></div>
+          </div>
+        </div><!-- /incomePage -->
+
+
+        <!-- ── PAGE: Expenses ── -->
+        <div class="page" id="expensesPage">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Gider Yönetimi</div>
+              <div class="section-actions">
+                <button class="btn-outline" onclick="exportExcel('expense')">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Excel
+                </button>
+                <button class="btn-add" onclick="openModal('expense')">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Gider Ekle
+                </button>
+              </div>
+            </div>
+            <div class="search-bar">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex-shrink:0">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" class="search-input" placeholder="Gider ara..." id="expenseSearchInput" oninput="filterTransactions('expense')"/>
+            </div>
+            <div class="filter-row">
+              <button class="filter-pill active" data-filter="all"       onclick="setFilter(this,'expense')">Tümü</button>
+              <button class="filter-pill"        data-filter="paid"      onclick="setFilter(this,'expense')">Ödendi</button>
+              <button class="filter-pill"        data-filter="unpaid"    onclick="setFilter(this,'expense')">Ödenmedi</button>
+              <button class="filter-pill"        data-filter="overdue"   onclick="setFilter(this,'expense')">Gecikmiş</button>
+              <button class="filter-pill"        data-filter="recurring" onclick="setFilter(this,'expense')">Tekrarlı</button>
+            </div>
+            <div class="transaction-list" id="expenseList"></div>
+          </div>
+        </div><!-- /expensesPage -->
+
+
+        <!-- ── PAGE: Analysis ── -->
+        <div class="page" id="analysisPage">
+          <div class="analysis-grid" id="analysisCards"></div>
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Net Kâr/Zarar Trendi</div>
+                <div class="chart-subtitle">Son 6 ay</div>
+              </div>
+              <div class="chart-container"><canvas id="netTrendChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Gelir Kategori Dağılımı</div>
+                <div class="chart-subtitle">Bu ay</div>
+              </div>
+              <div class="chart-container"><canvas id="incomePieChart"></canvas></div>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">En Fazla Harcama Kategorileri</div>
+            </div>
+            <div style="padding:16px 20px" id="topCategoriesBar"></div>
+          </div>
+        </div><!-- /analysisPage -->
+
+
+        <!-- ── PAGE: Reports ── -->
+        <div class="page" id="reportsPage">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Raporlar &amp; Export</div>
+              <div class="section-actions">
+                <button class="btn-outline" onclick="exportPDF()">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  PDF İndir
+                </button>
+                <button class="btn-outline" onclick="exportExcel('all')">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Excel İndir
+                </button>
+              </div>
+            </div>
+            <div style="padding:24px" id="reportSummary"></div>
+          </div>
+        </div><!-- /reportsPage -->
+
+      </main><!-- /main-content -->
+    </div><!-- /app-layout -->
+  </div><!-- /appScreen -->
+
+
+  <!-- ============================================================
+       INCOME MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="incomeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="incomModalTitle">Gelir Ekle</div>
+        <button class="modal-close" onclick="closeModal('incomeModal')">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="incomeEditId"/>
+        <div class="form-group">
+          <label class="form-label">Başlık</label>
+          <input type="text" id="incomeTitle" class="form-input" placeholder="Maaş, Freelance, vb."/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tutar (₺)</label>
+            <input type="number" id="incomeAmount" class="form-input" placeholder="0.00" step="0.01" min="0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kategori</label>
+            <select id="incomeCategory" class="form-select">
+              <option>Maaş</option>
+              <option>Serbest Meslek</option>
+              <option>Yatırım</option>
+              <option>Kira Geliri</option>
+              <option>Satış</option>
+              <option>Diğer</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tarih</label>
+            <input type="date" id="incomeDate" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tekrar</label>
+            <div class="toggle-group">
+              <button class="toggle-option active" id="incomRecurOff" onclick="setIncomeRecur(false)">Tek Seferlik</button>
+              <button class="toggle-option"        id="incomRecurOn"  onclick="setIncomeRecur(true)">Aylık</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Açıklama (Opsiyonel)</label>
+          <input type="text" id="incomeDesc" class="form-input" placeholder="Ek bilgi..."/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal('incomeModal')">İptal</button>
+        <button class="btn-save"   onclick="saveIncome()">💾 Kaydet</button>
+      </div>
+    </div>
+  </div><!-- /incomeModal -->
+
+
+  <!-- ============================================================
+       EXPENSE MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="expenseModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="expenseModalTitle">Gider Ekle</div>
+        <button class="modal-close" onclick="closeModal('expenseModal')">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="expenseEditId"/>
+        <div class="form-group">
+          <label class="form-label">Başlık</label>
+          <input type="text" id="expenseTitle" class="form-input" placeholder="Kira, Fatura, Market, vb."/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tutar (₺)</label>
+            <input type="number" id="expenseAmount" class="form-input" placeholder="0.00" step="0.01" min="0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kategori</label>
+            <select id="expenseCategory" class="form-select">
+              <option>Kira</option>
+              <option>Fatura</option>
+              <option>Market</option>
+              <option>Ulaşım</option>
+              <option>Sağlık</option>
+              <option>Eğitim</option>
+              <option>Eğlence</option>
+              <option>Giyim</option>
+              <option>Teknoloji</option>
+              <option>Abonelik</option>
+              <option>Sigorta</option>
+              <option>Diğer</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Son Ödeme Tarihi</label>
+            <input type="date" id="expenseDueDate" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tekrar</label>
+            <div class="toggle-group">
+              <button class="toggle-option active" id="expRecurOff" onclick="setExpenseRecur(false)">Tek Seferlik</button>
+              <button class="toggle-option"        id="expRecurOn"  onclick="setExpenseRecur(true)">Aylık</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ödeme Durumu</label>
+          <div class="toggle-group">
+            <button class="toggle-option"        id="expPaidOff" onclick="setExpensePaid(false)">Ödenmedi</button>
+            <button class="toggle-option active" id="expPaidOn"  onclick="setExpensePaid(true)">Ödendi</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Açıklama (Opsiyonel)</label>
+          <input type="text" id="expenseDesc" class="form-input" placeholder="Ek bilgi..."/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal('expenseModal')">İptal</button>
+        <button class="btn-save"   onclick="saveExpense()">💾 Kaydet</button>
+      </div>
+    </div>
+  </div><!-- /expenseModal -->
+
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- App Script -->
+  <script src="js/app.js"></script>
+
+</body>
+</html>
