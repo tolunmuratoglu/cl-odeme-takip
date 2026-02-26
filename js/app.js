@@ -66,31 +66,42 @@ function updateMonthLabel() {
 /* ============================================================
    REALTIME DATA
    ============================================================ */
+// Listener unsubscribe fonksiyonlarını sakla
+window._unsubscribers = [];
+
 function setupRealtime(uid) {
   const { collection, query, where, onSnapshot } = window._firebase;
   const db = window._db;
 
-  // Incomes — orderBy kaldırıldı (composite index gerektiriyordu)
+  // Önceki listener'ları temizle
+  window._unsubscribers.forEach(unsub => unsub());
+  window._unsubscribers = [];
+
+  // Incomes listener
   const incQ = query(collection(db,'incomes'), where('uid','==',uid));
-  onSnapshot(incQ, (snap) => {
+  const unsubInc = onSnapshot(incQ, (snap) => {
     appState.incomes = snap.docs.map(d => ({id:d.id, ...d.data()}));
     appState.incomes.sort((a,b) => (b.date||'').localeCompare(a.date||''));
     refreshAll();
   }, (err) => {
+    if (err.code === 'permission-denied') return; // Çıkış sonrası normal
     console.error('Incomes error:', err);
     showToast('Gelir verisi yüklenemedi: ' + err.message, 'error');
   });
 
-  // Expenses — orderBy kaldırıldı
+  // Expenses listener
   const expQ = query(collection(db,'expenses'), where('uid','==',uid));
-  onSnapshot(expQ, (snap) => {
+  const unsubExp = onSnapshot(expQ, (snap) => {
     appState.expenses = snap.docs.map(d => ({id:d.id, ...d.data()}));
     appState.expenses.sort((a,b) => (b.dueDate||'').localeCompare(a.dueDate||''));
     refreshAll();
   }, (err) => {
+    if (err.code === 'permission-denied') return; // Çıkış sonrası normal
     console.error('Expenses error:', err);
     showToast('Gider verisi yüklenemedi: ' + err.message, 'error');
   });
+
+  window._unsubscribers.push(unsubInc, unsubExp);
 }
 
 function refreshAll() {
@@ -258,9 +269,8 @@ function getStatusBadge(tx) {
    CHARTS
    ============================================================ */
 function renderCharts(incomes, expenses) {
-  const isDark = document.documentElement.dataset.theme === 'dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
-  const textColor = isDark ? '#8baed4' : '#8a9bb0';
+  const gridColor = 'rgba(0,0,0,0.06)';
+  const textColor = '#8a9bb0';
 
   Chart.defaults.font.family = "'Sora', sans-serif";
   Chart.defaults.font.size = 11;
@@ -447,9 +457,8 @@ function renderAnalysis() {
   `;
 
   // Analysis charts
-  const isDark = document.documentElement.dataset.theme === 'dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
-  const textColor = isDark ? '#8baed4' : '#8a9bb0';
+  const gridColor = 'rgba(0,0,0,0.06)';
+  const textColor = '#8a9bb0';
 
   // Net trend
   const months = [];
@@ -856,6 +865,14 @@ async function showForgotPassword() {
 }
 
 async function doLogout() {
+  // Önce listener'ları kapat, sonra çıkış yap
+  if (window._unsubscribers) {
+    window._unsubscribers.forEach(unsub => unsub());
+    window._unsubscribers = [];
+  }
+  // State'i temizle
+  appState.incomes  = [];
+  appState.expenses = [];
   const { signOut } = window._firebase;
   await signOut(window._auth);
 }
@@ -899,16 +916,6 @@ function toggleSidebar(force) {
   overlay.classList.toggle('open', newState);
 }
 
-function toggleDark() {
-  const html = document.documentElement;
-  const isDark = html.dataset.theme === 'dark';
-  html.dataset.theme = isDark ? 'light' : 'dark';
-  document.getElementById('darkIcon').innerHTML = isDark
-    ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
-    : '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-  // Re-render charts with new theme colors
-  setTimeout(() => refreshAll(), 100);
-}
 
 function toggleNotifPanel() {
   document.getElementById('notifPanel').classList.toggle('open');
@@ -942,6 +949,13 @@ function switchTab(tab) {
   document.getElementById('loginForm').style.display    = tab==='login'    ? 'block' : 'none';
   document.getElementById('registerForm').style.display = tab==='register' ? 'block' : 'none';
   clearLoginAlert();
+}
+
+function fillDemo() {
+  document.getElementById('loginEmail').value    = 'demo@finansaltakip.com';
+  document.getElementById('loginPassword').value = '123456';
+  switchTab('login');
+  showLoginAlert('Demo bilgileri dolduruldu. Giriş Yap butonuna tıklayın.', 'success');
 }
 
 function togglePwd(id, btn) {
@@ -1005,8 +1019,8 @@ function exportExcel(type) {
   if (!data.length) { showToast('Dışa aktarılacak veri yok','warning'); return; }
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Finans Takip');
-  XLSX.writeFile(wb, `finans-takip-${MONTHS_TR[appState.viewMonth]}-${appState.viewYear}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, 'Finansal Takip');
+  XLSX.writeFile(wb, `finansal-takip-${MONTHS_TR[appState.viewMonth]}-${appState.viewYear}.xlsx`);
   showToast('Excel indirildi', 'success');
 }
 
