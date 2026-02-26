@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="tr" data-theme="light">
+<html lang="tr">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#1e3a5f"/>
-  <meta name="description" content="Finans Takip — Profesyonel Gelir ve Gider Yönetim Uygulaması"/>
-  <meta name="author" content="Finans Takip"/>
-  <meta property="og:title" content="Finans Takip"/>
+  <meta name="description" content="Finansal Takip — Profesyonel Gelir ve Gider Yönetim Uygulaması"/>
+  <meta name="author" content="Finansal Takip"/>
+  <meta property="og:title" content="Finansal Takip"/>
   <meta property="og:description" content="Gelir ve giderlerinizi profesyonel şekilde yönetin"/>
   <meta property="og:type" content="website"/>
 
-  <title>Finans Takip — Profesyonel Gelir &amp; Gider Yönetimi</title>
+  <title>Finansal Takip — Profesyonel Gelir &amp; Gider Yönetimi</title>
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json"/>
@@ -48,7 +48,7 @@
           </svg>
         </div>
         <div>
-          <div class="login-brand-name">Finans Takip</div>
+          <div class="login-brand-name">Finansal Takip</div>
         </div>
       </div>
       <p class="login-tagline">Gelir ve giderlerinizi profesyonel şekilde yönetin</p>
@@ -114,9 +114,9 @@
       </div>
 
       <!-- Demo Account Info -->
-      <div class="demo-box">
-        🔑 <strong>Demo Hesap</strong><br/>
-        E-posta: <span class="mono">demo@finanstakip.com</span><br/>
+      <div class="demo-box" onclick="fillDemo()" style="cursor:pointer;" title="Tıklayarak otomatik doldurun">
+        🔑 <strong>Demo Hesap</strong> <span style="font-size:11px;color:var(--accent-blue-lt)">(tıklayarak giriş yapın)</span><br/>
+        E-posta: <span class="mono">demo@finansaltakip.com</span><br/>
         Şifre: <span class="mono">123456</span>
       </div>
 
@@ -144,7 +144,7 @@
             </svg>
           </div>
           <div>
-            <div class="sidebar-brand-text">Finans Takip</div>
+            <div class="sidebar-brand-text">Finansal Takip</div>
             <div class="sidebar-brand-sub">Pro Panel</div>
           </div>
         </div>
@@ -257,12 +257,7 @@
               </svg>
               <span class="notif-dot" id="notifDot" style="display:none"></span>
             </div>
-            <!-- Dark Mode -->
-            <button class="btn-icon" onclick="toggleDark()" title="Dark / Light Mode">
-              <svg id="darkIcon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            </button>
+
           </div>
         </header>
 
@@ -601,8 +596,54 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <!-- ============================================================
+       ÇEREZ (COOKIE) CONSENT POPUP
+       ============================================================ -->
+  <div id="cookieConsent" style="display:none">
+    <div class="cookie-icon">🍪</div>
+    <div class="cookie-content">
+      <div class="cookie-title">Çerez Politikası</div>
+      <div class="cookie-text">
+        Bu uygulama, oturum yönetimi ve tercihlerinizi hatırlamak için zorunlu çerezler kullanmaktadır.
+        Uygulamayı kullanmaya devam ederek çerez politikamızı kabul etmiş olursunuz.
+      </div>
+    </div>
+    <div class="cookie-actions">
+      <button class="cookie-btn-accept" onclick="acceptCookies()">Kabul Et</button>
+      <button class="cookie-btn-reject" onclick="rejectCookies()">Reddet</button>
+    </div>
+  </div>
+
   <!-- App Script -->
   <script src="js/app.js"></script>
+  <script>
+    // Cookie consent logic
+    (function() {
+      const consent = localStorage.getItem('ft_cookie_consent');
+      if (!consent) {
+        setTimeout(() => {
+          document.getElementById('cookieConsent').style.display = 'flex';
+        }, 800);
+      }
+    })();
+
+    function acceptCookies() {
+      localStorage.setItem('ft_cookie_consent', 'accepted');
+      hideCookieBanner();
+    }
+
+    function rejectCookies() {
+      localStorage.setItem('ft_cookie_consent', 'rejected');
+      hideCookieBanner();
+    }
+
+    function hideCookieBanner() {
+      const el = document.getElementById('cookieConsent');
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      setTimeout(() => el.style.display = 'none', 350);
+    }
+  </script>
 
 </body>
 </html>
