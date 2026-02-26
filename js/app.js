@@ -159,7 +159,7 @@ function renderDashboard() {
     <div class="stat-card stat-card-net">
       <div class="stat-card-header">
         <div class="stat-card-icon icon-net">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 9l4-4 4 4M3 15l4 4 4-4"/><path d="M17 9l2 2 2-2"/><path d="M17 15l2-2 2 2"/></svg>
         </div>
         <span class="${net>=0?'badge-kar':'badge-zarar'}">${net>=0?'Kâr':'Zarar'}</span>
       </div>
